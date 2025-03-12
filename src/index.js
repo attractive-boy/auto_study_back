@@ -41,7 +41,7 @@ fastify.register(swagger, {
       description: 'API documentation',
       version: '1.0.0'
     },
-    host: process.env.VERCEL ? 'https://autostudy.djjp.cn' : `localhost:${process.env.PORT || 3000}`,
+    host: process.env.VERCEL ? 'autostudy.djjp.cn' : `localhost:${process.env.PORT || 3000}`,
     schemes: ['https', 'http'],
     consumes: ['application/json'],
     produces: ['application/json']
