@@ -1,4 +1,4 @@
-const fastify = require('fastify')();
+const fastify = require('fastify')({ logger: false });
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('@fastify/jwt');
 const cors = require('@fastify/cors');
@@ -41,11 +41,10 @@ fastify.register(swagger, {
       description: 'API documentation',
       version: '1.0.0'
     },
-    host: `${process.env.HOST || 'localhost'}:${process.env.PORT || 3000}`,
-    schemes: ['http'],
+    host: process.env.VERCEL_URL || `${process.env.HOST || 'localhost'}:${process.env.PORT || 3000}`,
+    schemes: ['https', 'http'],
     consumes: ['application/json'],
-    produces: ['application/json'],
-    // basePath: '/api'
+    produces: ['application/json']
   }
 });
 
@@ -66,5 +65,11 @@ fastify.register(require('./routes'))
 // 导出Fastify实例以供Vercel使用
 module.exports = async (req, res) => {
   await fastify.ready();
-  fastify.server.emit('request', req, res);
+  try {
+    await fastify.server.emit('request', req, res);
+  } catch (err) {
+    console.error('Error handling request:', err);
+    res.statusCode = 500;
+    res.end('Internal Server Error');
+  }
 };
