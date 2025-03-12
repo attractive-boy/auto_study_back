@@ -63,15 +63,8 @@ fastify.decorate('prisma', prisma);
 // 注册所有路由
 fastify.register(require('./routes'))
 
-// 启动服务器
-const start = async () => {
-  try {
-    await fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' });
-    logger.info(`Server is running on ${fastify.server.address().port}`);
-  } catch (err) {
-    logger.error(err, 'Error starting server');
-    process.exit(1);
-  }
+// 导出Fastify实例以供Vercel使用
+module.exports = async (req, res) => {
+  await fastify.ready();
+  fastify.server.emit('request', req, res);
 };
-
-start();
