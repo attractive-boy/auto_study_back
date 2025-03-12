@@ -62,14 +62,29 @@ fastify.decorate('prisma', prisma);
 // 注册所有路由
 fastify.register(require('./routes'))
 
-// 导出Fastify实例以供Vercel使用
-module.exports = async (req, res) => {
-  await fastify.ready();
-  try {
-    await fastify.server.emit('request', req, res);
-  } catch (err) {
-    console.error('Error handling request:', err);
-    res.statusCode = 500;
-    res.end('Internal Server Error');
-  }
-};
+// 根据环境判断启动方式
+if (process.env.VERCEL) {
+  // Vercel环境下使用serverless方式
+  module.exports = async (req, res) => {
+    await fastify.ready();
+    try {
+      await fastify.server.emit('request', req, res);
+    } catch (err) {
+      console.error('Error handling request:', err);
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+    }
+  };
+} else {
+  // 本地开发环境下使用标准HTTP服务器
+  const start = async () => {
+    try {
+      await fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' });
+      console.log(`Server is running on ${process.env.PORT || 3000}`);
+    } catch (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+  };
+  start();
+}
