@@ -4,6 +4,18 @@ async function routes(fastify, options) {
   // 注册认证相关路由
   fastify.register(require('./auth'));
 
+  // 注册订单管理路由
+  fastify.register(require('./orders'));
+
+  // 注册支付管理路由
+  fastify.register(require('./payments'));
+
+  // 注册统计分析路由
+  fastify.register(require('./statistics'));
+
+  // 注册隐私政策路由
+  fastify.register(require('./privacy'));
+
   // 健康检查路由
   fastify.get('/health', {
     schema: {

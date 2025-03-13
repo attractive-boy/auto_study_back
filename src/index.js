@@ -59,6 +59,15 @@ fastify.register(swaggerUI, {
 // 装饰器添加prisma客户端
 fastify.decorate('prisma', prisma);
 
+// 添加认证中间件装饰器
+fastify.decorate('authenticate', async function(request, reply) {
+  try {
+    await request.jwtVerify();
+  } catch (err) {
+    reply.code(401).send({ error: '未授权访问' });
+  }
+});
+
 // 注册所有路由
 fastify.register(require('./routes'))
 

@@ -14,13 +14,248 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("user")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               Int              @id @default(autoincrement())
+  name             String?
+  avatar           String?
+  email            String           @unique
+  facebookId       String?
+  passwordHash     String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  @@map("users")
+  memberships      Membership[]
+  orders           Order[]
+  reservationLogs  ReservationLog[]
+  messages         Message[]
+  feedbacks        Feedback[]
+  recharges        Recharge[]
+}
+
+model Membership {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  membershipType  String
+  balance         Float     @default(0.0)
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime?
+
+  user            User      @relation(fields: [userId], references: [id])
+}
+
+model Store {
+  id         Int       @id @default(autoincrement())
+  name       String
+  location   String
+  distance   Float?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  seats      Seat[]
+  services   Service[]
+  orders     Order[]
+}
+
+model Seat {
+  id          Int       @id @default(autoincrement())
+  storeId     Int
+  seatNumber  String
+  status      String    // 如 "可预约"、"已占用"，也可改为枚举类型
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  store       Store     @relation(fields: [storeId], references: [id])
+  orders      Order[]
+  reservationLogs ReservationLog[]
+}
+
+model Service {
+  id         Int       @id @default(autoincrement())
+  storeId    Int
+  name       String
+  duration   Int       // 单位：分钟/小时，根据实际情况调整
+  price      Float
+  createdAt  DateTime  @default(now())
+
+  store      Store     @relation(fields: [storeId], references: [id])
+  orders     Order[]
+}
+
+model Order {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  storeId         Int
+  seatId          Int?      // 可为空（如无选座需求）
+  serviceId       Int?      // 可为空
+  status          String    // 如 "待付款"、"待使用"、"待评价"、"已完成"、"已取消"
+  orderStartTime  DateTime
+  orderEndTime    DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id])
+  store           Store     @relation(fields: [storeId], references: [id])
+  seat            Seat?     @relation(fields: [seatId], references: [id])
+  service         Service?  @relation(fields: [serviceId], references: [id])
+  reservationLogs ReservationLog[]
+  payment         Payment?
+  reconciliations Reconciliation[]
+}
+
+model ReservationLog {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  orderId    Int
+  seatId     Int
+  startTime  DateTime
+  endTime    DateTime
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id])
+  order      Order     @relation(fields: [orderId], references: [id])
+  seat       Seat      @relation(fields: [seatId], references: [id])
+}
+
+model Payment {
+  id              Int       @id @default(autoincrement())
+  orderId         Int       @unique
+  amount          Float
+  paymentMethod   String
+  paymentStatus   String    // 如 "待支付"、"已支付"、"失败"
+  transactionTime DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  order           Order     @relation(fields: [orderId], references: [id])
+}
+
+model Message {
+  id          Int       @id @default(autoincrement())
+  userId      Int?      // 若为空则为全平台公告
+  messageType String
+  content     String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  user        User?     @relation(fields: [userId], references: [id])
+}
+
+model Feedback {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  content     String
+  contactInfo String?
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Agreement {
+  id         Int       @id @default(autoincrement())
+  type       String    // 如 "注册协议"、"隐私协议"等
+  content    String
+  version    String
+  updatedAt  DateTime  @default(now())
+}
+
+model Carousel {
+  id         Int       @id @default(autoincrement())
+  imageUrl   String
+  linkUrl    String?
+  sortOrder  Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Admin {
+  id           Int         @id @default(autoincrement())
+  username     String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  adminRoles   AdminRole[]
+}
+
+model Role {
+  id              Int           @id @default(autoincrement())
+  roleName        String
+  description     String?
+
+  adminRoles      AdminRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id              Int           @id @default(autoincrement())
+  permissionName  String
+  description     String?
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           Int         @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+
+  role         Role        @relation(fields: [roleId], references: [id])
+  permission   Permission  @relation(fields: [permissionId], references: [id])
+}
+
+model AdminRole {
+  id       Int    @id @default(autoincrement())
+  adminId  Int
+  roleId   Int
+
+  admin    Admin  @relation(fields: [adminId], references: [id])
+  role     Role   @relation(fields: [roleId], references: [id])
+}
+
+model Recharge {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  amount         Float
+  rechargeStatus String    // 如 "成功"、"失败"、"处理中"
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id])
+}
+
+model Reconciliation {
+  id        Int       @id @default(autoincrement())
+  type      String    // 收益类型，如 "会员充值收益"、"服务套餐收益"等
+  amount    Float
+  orderId   Int?
+  createdAt DateTime  @default(now())
+
+  order     Order?    @relation(fields: [orderId], references: [id])
+}
+
+model SystemSetting {
+  id           Int       @id @default(autoincrement())
+  settingKey   String    @unique
+  settingValue String
+  description  String?
+  updatedAt    DateTime  @updatedAt
+}
+
+model ThirdPartyService {
+  id               Int       @id @default(autoincrement())
+  serviceName      String
+  configParameters String    // 可存储 JSON 字符串
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Statistics {
+  id           Int       @id @default(autoincrement())
+  statDate     DateTime
+  totalUsers   Int
+  newUsers     Int
+  totalOrders  Int
+  newOrders    Int
+  totalMembers Int
+  newMembers   Int
+  createdAt    DateTime  @default(now())
 }
