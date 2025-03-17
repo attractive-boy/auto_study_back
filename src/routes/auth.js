@@ -1,6 +1,7 @@
 const { hash, compare } = require('bcrypt');
 // const passport = require('@fastify/passport');
 // const FacebookStrategy = require('passport-facebook').Strategy;
+const { logger } = require('../config/logger');
 
 async function authRoutes(fastify, options) {
   // 配置Facebook登录策略
@@ -140,7 +141,7 @@ async function authRoutes(fastify, options) {
       const user = await prisma.user.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name
         },
         select: {
@@ -155,6 +156,7 @@ async function authRoutes(fastify, options) {
       if (error.code === 'P2002') {
         reply.code(400).send({ error: '该邮箱已被注册' });
       } else {
+        logger.error(error);
         throw error;
       }
     }
@@ -212,7 +214,7 @@ async function authRoutes(fastify, options) {
       return;
     }
 
-    const valid = await compare(password, user.password);
+    const valid = await compare(password, user.passwordHash);
     if (!valid) {
       reply.code(401).send({ error: '邮箱或密码错误' });
       return;
