@@ -1,7 +1,6 @@
 const { hash, compare } = require('bcrypt');
 // const passport = require('@fastify/passport');
 // const FacebookStrategy = require('passport-facebook').Strategy;
-const { logger } = require('../config/logger');
 
 async function authRoutes(fastify, options) {
   // 配置Facebook登录策略
@@ -156,7 +155,7 @@ async function authRoutes(fastify, options) {
       if (error.code === 'P2002') {
         reply.code(400).send({ error: '该邮箱已被注册' });
       } else {
-        logger.error(error);
+        request.logger.error(error);
         throw error;
       }
     }
