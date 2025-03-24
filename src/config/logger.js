@@ -1,41 +1,37 @@
-const pino = require('pino');
-const dayjs = require('dayjs');
+const winston = require('winston');
+require('winston-mongodb');
 
-// 创建基础日志配置
-const baseLogConfig = {
-  timestamp: () => `,"time":"${dayjs().format()}"`
-};
+// 创建控制台传输器
+const consoleTransport = new winston.transports.Console({
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  )
+});
 
-// 通用日志配置
-const config = {
-  ...baseLogConfig,
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => {
-      return { level: label.toUpperCase() };
+// MongoDB 传输器
+const mongoTransport = new winston.transports.MongoDB({
+  db: `mongodb://root:${process.env.MONGO_PASS}@47.121.208.223:27017/auto_study_app_logs?authSource=admin`,
+  collection: 'system_logs',
+  options: {
+    useUnifiedTopology: true,
+    auth: {
+      username: 'root',
+      password: process.env.MONGO_PASS
     }
   },
-  serializers: {
-    err: pino.stdSerializers.err,
-    error: pino.stdSerializers.err,
-    req: pino.stdSerializers.req,
-    res: pino.stdSerializers.res
-  }
-};
+  metaKey: 'metadata',
+  expireAfterSeconds: 2592000 // 30天后自动删除
+});
 
-// 在非生产环境下使用pino-pretty
-if (process.env.NODE_ENV !== 'production') {
-  config.transport = {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'SYS:standard',
-      ignore: 'pid,hostname'
-    }
-  };
-}
-
-// 创建logger实例
-const logger = pino(config);
+// 创建 logger 实例
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [consoleTransport, mongoTransport]
+});
 
 module.exports = logger;
