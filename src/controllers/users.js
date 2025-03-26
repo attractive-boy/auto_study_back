@@ -16,6 +16,11 @@ async function createUser(request, reply) {
     return reply.code(201).send(userWithoutPassword);
   } catch (error) {
     if (error.code === 'P2002') {
+      request.log({
+        err: error,
+        msg: '邮箱已被注册',
+        email
+      });
       return reply.code(400).send({ error: '该邮箱已被注册' });
     }
     request.log.error(error);

@@ -2,10 +2,16 @@
   "name": "auto_study_background",
   "version": "1.0.0",
   "main": "index.js",
+  "bin": "src/index.js",
+  "pkg": {
+      "targets": [ "node18-win-x64" ],
+      "outputPath": "dist"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "node src/index.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "build": "node build.js"
   },
   "keywords": [],
   "author": "",
@@ -24,16 +30,24 @@
     "bcrypt": "^5.1.1",
     "dayjs": "^1.11.13",
     "fastify": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jscrambler": "^8.8.3",
     "mongodb": "^6.15.0",
     "passport-facebook": "^3.0.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
     "pino-roll": "^3.0.0",
     "pino-socket": "^7.4.0",
+    "rate-limiter-flexible": "^6.2.1",
     "winston": "^3.17.0",
     "winston-mongodb": "^6.0.0"
   },
   "devDependencies": {
-    "prisma": "^6.5.0"
+    "bytenode": "^1.5.7",
+    "javascript-obfuscator": "^4.1.0",
+    "nexe": "^5.0.0-beta.4",
+    "prisma": "^6.5.0",
+    "v8-compile-cache": "^2.4.0"
+    
   }
 }

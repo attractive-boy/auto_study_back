@@ -153,9 +153,18 @@ async function authRoutes(fastify, options) {
       reply.code(201).send(user);
     } catch (error) {
       if (error.code === 'P2002') {
+        fastify.log.error({
+          err: error,
+          msg: '邮箱已被注册',
+          email: request.body.email
+        });
         reply.code(400).send({ error: '该邮箱已被注册' });
       } else {
-        request.logger.error(error);
+        fastify.log.error({
+          err: error,
+          msg: '用户注册失败',
+          email: request.body.email
+        });
         throw error;
       }
     }
