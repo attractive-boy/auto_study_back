@@ -166,6 +166,41 @@ async function storeRoutes(fastify, options) {
 
   // 获取店铺的座位列表
   fastify.get('/stores/:storeId/seats', {
+    schema: {
+      description: '获取店铺的座位列表',
+      tags: ['店铺管理'],
+      params: {
+        type: 'object',
+        required: ['storeId'],
+        properties: {
+          storeId: { type: 'string', description: '店铺ID' }
+        }
+      },
+      response: {
+        200: {
+          type: 'array',
+          description: '座位列表',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', description: '座位ID' },
+              storeId: { type: 'number', description: '店铺ID' },
+              seatNumber: { type: 'string', description: '座位号' },
+              status: { type: 'string', description: '座位状态' },
+              createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
+              updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
+            }
+          }
+        },
+        500: {
+          type: 'object',
+          description: '获取失败',
+          properties: {
+            error: { type: 'string', description: '错误信息' }
+          }
+        }
+      }
+    },
     handler: async (request, reply) => {
       const { storeId } = request.params;
       try {
@@ -183,6 +218,43 @@ async function storeRoutes(fastify, options) {
 
   // 获取店铺的服务列表
   fastify.get('/stores/:storeId/services', {
+    schema: {
+      description: '获取店铺的服务列表',
+      tags: ['店铺管理'],
+      params: {
+        type: 'object',
+        required: ['storeId'],
+        properties: {
+          storeId: { type: 'string', description: '店铺ID' }
+        }
+      },
+      response: {
+        200: {
+          type: 'array',
+          description: '服务列表',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', description: '服务ID' },
+              storeId: { type: 'number', description: '店铺ID' },
+              name: { type: 'string', description: '服务名称' },
+              description: { type: 'string', description: '服务描述' },
+              price: { type: 'number', description: '服务价格' },
+              duration: { type: 'number', description: '服务时长(分钟)' },
+              createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
+              updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
+            }
+          }
+        },
+        500: {
+          type: 'object',
+          description: '获取失败',
+          properties: {
+            error: { type: 'string', description: '错误信息' }
+          }
+        }
+      }
+    },
     handler: async (request, reply) => {
       const { storeId } = request.params;
       try {
