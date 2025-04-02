@@ -5,10 +5,10 @@ async function routes(fastify, options) {
   fastify.register(require('./auth'));
 
   // 注册订单管理路由
-  fastify.register(require('./orders'));
+  //fastify.register(require('./orders'));
 
   // 注册支付管理路由
-  fastify.register(require('./payments'));
+  //fastify.register(require('./payments'));
 
   // 注册统计分析路由
   fastify.register(require('./statistics'));
