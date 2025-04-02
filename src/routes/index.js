@@ -16,6 +16,9 @@ async function routes(fastify, options) {
   // 注册隐私政策路由
   fastify.register(require('./privacy'));
 
+  // 注册店铺管理路由
+  fastify.register(require('./stores'));
+
   // 健康检查路由
   fastify.get('/health', {
     schema: {
