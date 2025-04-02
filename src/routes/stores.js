@@ -16,7 +16,6 @@ async function storeRoutes(fastify, options) {
             id: { type: 'number', description: '店铺ID' },
             name: { type: 'string', description: '店铺名称' },
             location: { type: 'string', description: '店铺位置' },
-            distance: { type: 'number', description: '距离' },
             createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
             updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
           }
@@ -49,7 +48,6 @@ async function storeRoutes(fastify, options) {
               id: { type: 'number', description: '店铺ID' },
               name: { type: 'string', description: '店铺名称' },
               location: { type: 'string', description: '店铺位置' },
-              distance: { type: 'number', description: '距离' },
               createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
               updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
             }
@@ -80,7 +78,6 @@ async function storeRoutes(fastify, options) {
             id: { type: 'number', description: '店铺ID' },
             name: { type: 'string', description: '店铺名称' },
             location: { type: 'string', description: '店铺位置' },
-            distance: { type: 'number', description: '距离' },
             createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
             updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
           }
@@ -118,7 +115,6 @@ async function storeRoutes(fastify, options) {
             id: { type: 'number', description: '店铺ID' },
             name: { type: 'string', description: '店铺名称' },
             location: { type: 'string', description: '店铺位置' },
-            distance: { type: 'number', description: '距离' },
             updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
           }
         },

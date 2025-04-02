@@ -4,258 +4,299 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// Prisma客户端生成器配置
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js"  // 使用prisma-client-js作为客户端
 }
 
+// 数据源配置
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"            // 使用MySQL数据库
+  url      = env("DATABASE_URL") // 数据库连接URL，从环境变量获取
 }
 
+// 用户模型：存储用户基本信息
 model User {
-  id               Int              @id @default(autoincrement())
-  name             String?
-  avatar           String?
-  email            String           @unique
-  facebookId       String?
-  passwordHash     String
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id               Int              @id @default(autoincrement()) // 用户ID，主键，自增
+  name             String?          // 用户名称，可选
+  avatar           String?          // 用户头像URL，可选
+  email            String           @unique // 邮箱地址，唯一
+  facebookId       String?          // Facebook账号ID，可选
+  passwordHash     String           // 密码哈希值
+  createdAt        DateTime         @default(now()) // 创建时间
+  updatedAt        DateTime         @updatedAt // 更新时间
 
-  memberships      Membership[]
-  orders           Order[]
-  reservationLogs  ReservationLog[]
-  messages         Message[]
-  feedbacks        Feedback[]
-  recharges        Recharge[]
+  // 关联字段
+  memberships      Membership[]     // 用户的会员资格
+  orders           Order[]          // 用户的订单
+  reservationLogs  ReservationLog[] // 用户的预约记录
+  messages         Message[]        // 用户的消息
+  feedbacks        Feedback[]       // 用户的反馈
+  recharges        Recharge[]       // 用户的充值记录
 }
 
+
+// 会员资格模型：管理用户的会员信息
 model Membership {
-  id              Int       @id @default(autoincrement())
-  userId          Int
-  membershipType  String
-  balance         Float     @default(0.0)
-  createdAt       DateTime  @default(now())
-  expiresAt       DateTime?
+  id              Int       @id @default(autoincrement()) // 会员ID，主键，自增
+  userId          Int       // 关联的用户ID
+  membershipType  String    // 会员类型
+  balance         Float     @default(0.0) // 会员余额，默认为0
+  createdAt       DateTime  @default(now()) // 创建时间
+  expiresAt       DateTime? // 会员过期时间，可选
 
-  user            User      @relation(fields: [userId], references: [id])
+  // 关联关系
+  user            User      @relation(fields: [userId], references: [id]) // 关联到用户表
 }
 
+// 店铺模型：管理门店信息
 model Store {
-  id         Int       @id @default(autoincrement())
-  name       String
-  location   String
-  distance   Float?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id         Int       @id @default(autoincrement()) // 店铺ID，主键，自增
+  name       String    // 店铺名称
+  location   String    // 店铺地址
+  createdAt  DateTime  @default(now()) // 创建时间
+  updatedAt  DateTime  @updatedAt // 更新时间
 
-  seats      Seat[]
-  services   Service[]
-  orders     Order[]
+  // 关联字段
+  seats      Seat[]    // 店铺的座位
+  services   Service[] // 店铺提供的服务
+  orders     Order[]   // 店铺的订单
 }
 
+// 座位模型：管理店铺座位信息
 model Seat {
-  id          Int       @id @default(autoincrement())
-  storeId     Int
-  seatNumber  String
-  status      String    // 如 "可预约"、"已占用"，也可改为枚举类型
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id          Int       @id @default(autoincrement()) // 座位ID，主键，自增
+  storeId     Int       // 关联的店铺ID
+  seatNumber  String    // 座位编号
+  status      String    // 座位状态：如 "可预约"、"已占用"，也可改为枚举类型
+  createdAt   DateTime  @default(now()) // 创建时间
+  updatedAt   DateTime  @updatedAt // 更新时间
 
-  store       Store     @relation(fields: [storeId], references: [id])
-  orders      Order[]
-  reservationLogs ReservationLog[]
+  // 关联关系
+  store       Store     @relation(fields: [storeId], references: [id]) // 关联到店铺表
+  orders      Order[]   // 座位相关的订单
+  reservationLogs ReservationLog[] // 座位的预约记录
 }
 
+// 服务项目模型：管理店铺提供的服务
 model Service {
-  id         Int       @id @default(autoincrement())
-  storeId    Int
-  name       String
-  duration   Int       // 单位：分钟/小时，根据实际情况调整
-  price      Float
-  createdAt  DateTime  @default(now())
+  id         Int       @id @default(autoincrement()) // 服务ID，主键，自增
+  storeId    Int       // 关联的店铺ID
+  name       String    // 服务名称
+  duration   Int       // 服务时长（单位：分钟/小时）
+  price      Float     // 服务价格
+  createdAt  DateTime  @default(now()) // 创建时间
 
-  store      Store     @relation(fields: [storeId], references: [id])
-  orders     Order[]
+  // 关联关系
+  store      Store     @relation(fields: [storeId], references: [id]) // 关联到店铺表
+  orders     Order[]   // 服务相关的订单
 }
 
+// 订单模型：管理用户的预约订单
 model Order {
-  id              Int       @id @default(autoincrement())
-  userId          Int
-  storeId         Int
-  seatId          Int?      // 可为空（如无选座需求）
-  serviceId       Int?      // 可为空
-  status          String    // 如 "待付款"、"待使用"、"待评价"、"已完成"、"已取消"
-  orderStartTime  DateTime
-  orderEndTime    DateTime
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              Int       @id @default(autoincrement()) // 订单ID，主键，自增
+  userId          Int       // 下单用户ID
+  storeId         Int       // 店铺ID
+  seatId          Int?      // 座位ID（可选，无选座需求时为空）
+  serviceId       Int?      // 服务ID（可选，仅预约座位时为空）
+  status          String    // 订单状态：待付款、待使用、待评价、已完成、已取消
+  orderStartTime  DateTime  // 预约开始时间
+  orderEndTime    DateTime  // 预约结束时间
+  createdAt       DateTime  @default(now()) // 创建时间
+  updatedAt       DateTime  @updatedAt // 更新时间
 
-  user            User      @relation(fields: [userId], references: [id])
-  store           Store     @relation(fields: [storeId], references: [id])
-  seat            Seat?     @relation(fields: [seatId], references: [id])
-  service         Service?  @relation(fields: [serviceId], references: [id])
-  reservationLogs ReservationLog[]
-  payment         Payment?
-  reconciliations Reconciliation[]
+  // 关联关系
+  user            User      @relation(fields: [userId], references: [id]) // 关联到用户表
+  store           Store     @relation(fields: [storeId], references: [id]) // 关联到店铺表
+  seat            Seat?     @relation(fields: [seatId], references: [id]) // 关联到座位表（可选）
+  service         Service?  @relation(fields: [serviceId], references: [id]) // 关联到服务表（可选）
+  reservationLogs ReservationLog[] // 订单的预约记录
+  payment         Payment?  // 订单的支付信息
+  reconciliations Reconciliation[] // 订单的对账记录
 }
 
+// 预约记录模型：记录座位预约的详细信息
 model ReservationLog {
-  id         Int       @id @default(autoincrement())
-  userId     Int
-  orderId    Int
-  seatId     Int
-  startTime  DateTime
-  endTime    DateTime
-  createdAt  DateTime  @default(now())
+  id         Int       @id @default(autoincrement()) // 记录ID，主键，自增
+  userId     Int       // 预约用户ID
+  orderId    Int       // 关联订单ID
+  seatId     Int       // 预约座位ID
+  startTime  DateTime  // 预约开始时间
+  endTime    DateTime  // 预约结束时间
+  createdAt  DateTime  @default(now()) // 创建时间
 
-  user       User      @relation(fields: [userId], references: [id])
-  order      Order     @relation(fields: [orderId], references: [id])
-  seat       Seat      @relation(fields: [seatId], references: [id])
+  // 关联关系
+  user       User      @relation(fields: [userId], references: [id]) // 关联到用户表
+  order      Order     @relation(fields: [orderId], references: [id]) // 关联到订单表
+  seat       Seat      @relation(fields: [seatId], references: [id]) // 关联到座位表
 }
 
+// 支付模型：管理订单支付信息
 model Payment {
-  id              Int       @id @default(autoincrement())
-  orderId         Int       @unique
-  amount          Float
-  paymentMethod   String
-  paymentStatus   String    // 如 "待支付"、"已支付"、"失败"
-  transactionTime DateTime
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              Int       @id @default(autoincrement()) // 支付ID，主键，自增
+  orderId         Int       @unique // 关联订单ID，唯一约束
+  amount          Float     // 支付金额
+  paymentMethod   String    // 支付方式
+  paymentStatus   String    // 支付状态：待支付、已支付、失败
+  transactionTime DateTime  // 交易时间
+  createdAt       DateTime  @default(now()) // 创建时间
+  updatedAt       DateTime  @updatedAt // 更新时间
 
-  order           Order     @relation(fields: [orderId], references: [id])
+  // 关联关系
+  order           Order     @relation(fields: [orderId], references: [id]) // 关联到订单表
 }
 
+// 消息模型：管理用户消息和系统公告
 model Message {
-  id          Int       @id @default(autoincrement())
-  userId      Int?      // 若为空则为全平台公告
-  messageType String
-  content     String
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+  id          Int       @id @default(autoincrement()) // 消息ID，主键，自增
+  userId      Int?      // 接收用户ID（为空表示全平台公告）
+  messageType String    // 消息类型
+  content     String    // 消息内容
+  isRead      Boolean   @default(false) // 是否已读
+  createdAt   DateTime  @default(now()) // 创建时间
 
-  user        User?     @relation(fields: [userId], references: [id])
+  // 关联关系
+  user        User?     @relation(fields: [userId], references: [id]) // 关联到用户表（可选）
 }
 
+// 反馈模型：管理用户反馈信息
 model Feedback {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  content     String
-  contactInfo String?
-  createdAt   DateTime  @default(now())
+  id          Int       @id @default(autoincrement()) // 反馈ID，主键，自增
+  userId      Int       // 反馈用户ID
+  content     String    // 反馈内容
+  contactInfo String?   // 联系方式（可选）
+  createdAt   DateTime  @default(now()) // 创建时间
 
-  user        User      @relation(fields: [userId], references: [id])
+  // 关联关系
+  user        User      @relation(fields: [userId], references: [id]) // 关联到用户表
 }
 
+// 协议模型：管理系统各类协议
 model Agreement {
-  id         Int       @id @default(autoincrement())
-  type       String    // 如 "注册协议"、"隐私协议"等
-  content    String
-  version    String
-  updatedAt  DateTime  @default(now())
+  id         Int       @id @default(autoincrement()) // 协议ID，主键，自增
+  type       String    // 协议类型：注册协议、隐私协议等
+  content    String    // 协议内容
+  version    String    // 协议版本
+  updatedAt  DateTime  @default(now()) // 更新时间
 }
 
+// 轮播图模型：管理首页轮播图
 model Carousel {
-  id         Int       @id @default(autoincrement())
-  imageUrl   String
-  linkUrl    String?
-  sortOrder  Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id         Int       @id @default(autoincrement()) // 轮播图ID，主键，自增
+  imageUrl   String    // 图片URL
+  linkUrl    String?   // 跳转链接（可选）
+  sortOrder  Int       // 排序顺序
+  createdAt  DateTime  @default(now()) // 创建时间
+  updatedAt  DateTime  @updatedAt // 更新时间
 }
 
+// 管理员模型：管理后台用户
 model Admin {
-  id           Int         @id @default(autoincrement())
-  username     String      @unique
-  passwordHash String
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id           Int         @id @default(autoincrement()) // 管理员ID，主键，自增
+  username     String      @unique // 用户名，唯一
+  passwordHash String      // 密码哈希值
+  createdAt    DateTime    @default(now()) // 创建时间
+  updatedAt    DateTime    @updatedAt // 更新时间
 
-  adminRoles   AdminRole[]
+  // 关联字段
+  adminRoles   AdminRole[] // 管理员角色关联
 }
 
+// 角色模型：管理系统角色
 model Role {
-  id              Int           @id @default(autoincrement())
-  roleName        String
-  description     String?
+  id              Int           @id @default(autoincrement()) // 角色ID，主键，自增
+  roleName        String        // 角色名称
+  description     String?       // 角色描述（可选）
 
-  adminRoles      AdminRole[]
-  rolePermissions RolePermission[]
+  // 关联字段
+  adminRoles      AdminRole[]   // 角色与管理员的关联
+  rolePermissions RolePermission[] // 角色的权限关联
 }
 
+// 权限模型：管理系统权限
 model Permission {
-  id              Int           @id @default(autoincrement())
-  permissionName  String
-  description     String?
+  id              Int           @id @default(autoincrement()) // 权限ID，主键，自增
+  permissionName  String        // 权限名称
+  description     String?       // 权限描述（可选）
 
-  rolePermissions RolePermission[]
+  // 关联字段
+  rolePermissions RolePermission[] // 权限与角色的关联
 }
 
+// 角色权限关联模型：管理角色与权限的多对多关系
 model RolePermission {
-  id           Int         @id @default(autoincrement())
-  roleId       Int
-  permissionId Int
+  id           Int         @id @default(autoincrement()) // 关联ID，主键，自增
+  roleId       Int         // 角色ID
+  permissionId Int         // 权限ID
 
-  role         Role        @relation(fields: [roleId], references: [id])
-  permission   Permission  @relation(fields: [permissionId], references: [id])
+  // 关联关系
+  role         Role        @relation(fields: [roleId], references: [id]) // 关联到角色表
+  permission   Permission  @relation(fields: [permissionId], references: [id]) // 关联到权限表
 }
 
+// 管理员角色关联模型：管理管理员与角色的多对多关系
 model AdminRole {
-  id       Int    @id @default(autoincrement())
-  adminId  Int
-  roleId   Int
+  id       Int    @id @default(autoincrement()) // 关联ID，主键，自增
+  adminId  Int    // 管理员ID
+  roleId   Int    // 角色ID
 
-  admin    Admin  @relation(fields: [adminId], references: [id])
-  role     Role   @relation(fields: [roleId], references: [id])
+  // 关联关系
+  admin    Admin  @relation(fields: [adminId], references: [id]) // 关联到管理员表
+  role     Role   @relation(fields: [roleId], references: [id]) // 关联到角色表
 }
 
+// 充值模型：管理用户充值记录
 model Recharge {
-  id             Int       @id @default(autoincrement())
-  userId         Int
-  amount         Float
-  rechargeStatus String    // 如 "成功"、"失败"、"处理中"
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id             Int       @id @default(autoincrement()) // 充值ID，主键，自增
+  userId         Int       // 充值用户ID
+  amount         Float     // 充值金额
+  rechargeStatus String    // 充值状态：成功、失败、处理中
+  createdAt      DateTime  @default(now()) // 创建时间
+  updatedAt      DateTime  @updatedAt // 更新时间
 
-  user           User      @relation(fields: [userId], references: [id])
+  // 关联关系
+  user           User      @relation(fields: [userId], references: [id]) // 关联到用户表
 }
 
+// 对账模型：管理系统收益记录
 model Reconciliation {
-  id        Int       @id @default(autoincrement())
-  type      String    // 收益类型，如 "会员充值收益"、"服务套餐收益"等
-  amount    Float
-  orderId   Int?
-  createdAt DateTime  @default(now())
+  id        Int       @id @default(autoincrement()) // 对账ID，主键，自增
+  type      String    // 收益类型：会员充值收益、服务套餐收益等
+  amount    Float     // 收益金额
+  orderId   Int?      // 关联订单ID（可选）
+  createdAt DateTime  @default(now()) // 创建时间
 
-  order     Order?    @relation(fields: [orderId], references: [id])
+  // 关联关系
+  order     Order?    @relation(fields: [orderId], references: [id]) // 关联到订单表（可选）
 }
 
+// 系统设置模型：管理系统配置项
 model SystemSetting {
-  id           Int       @id @default(autoincrement())
-  settingKey   String    @unique
-  settingValue String
-  description  String?
-  updatedAt    DateTime  @updatedAt
+  id           Int       @id @default(autoincrement()) // 设置ID，主键，自增
+  settingKey   String    @unique // 设置键名，唯一
+  settingValue String    // 设置值
+  description  String?   // 设置描述（可选）
+  updatedAt    DateTime  @updatedAt // 更新时间
 }
 
+// 第三方服务模型：管理外部服务配置
 model ThirdPartyService {
-  id               Int       @id @default(autoincrement())
-  serviceName      String
-  configParameters String    // 可存储 JSON 字符串
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id               Int       @id @default(autoincrement()) // 服务ID，主键，自增
+  serviceName      String    // 服务名称
+  configParameters String    // 配置参数（JSON格式字符串）
+  createdAt        DateTime  @default(now()) // 创建时间
+  updatedAt        DateTime  @updatedAt // 更新时间
 }
 
+// 统计数据模型：记录系统各项统计指标
 model Statistics {
-  id           Int       @id @default(autoincrement())
-  statDate     DateTime
-  totalUsers   Int
-  newUsers     Int
-  totalOrders  Int
-  newOrders    Int
-  totalMembers Int
-  newMembers   Int
-  createdAt    DateTime  @default(now())
+  id           Int       @id @default(autoincrement()) // 统计ID，主键，自增
+  statDate     DateTime  // 统计日期
+  totalUsers   Int       // 总用户数
+  newUsers     Int       // 新增用户数
+  totalOrders  Int       // 总订单数
+  newOrders    Int       // 新增订单数
+  totalMembers Int       // 总会员数
+  newMembers   Int       // 新增会员数
+  createdAt    DateTime  @default(now()) // 创建时间
 }

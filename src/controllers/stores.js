@@ -1,13 +1,12 @@
 const dayjs = require('dayjs');
 
 async function createStore(request, reply) {
-  const { name, location, distance } = request.body;
+  const { name, location } = request.body;
   try {
     const store = await this.prisma.store.create({
       data: {
         name,
-        location,
-        distance
+        location
       }
     });
     return reply.code(201).send(store);
