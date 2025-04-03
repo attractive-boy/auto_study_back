@@ -1,4 +1,5 @@
 const dayjs = require('dayjs');
+const qpay = require('../services/qpay');
 
 async function createPayment(request, reply) {
   const { orderId, amount, paymentMethod } = request.body;
@@ -28,10 +29,26 @@ async function createPayment(request, reply) {
       }
     });
 
-    // TODO: 调用第三方支付接口，获取支付链接或二维码
-    // const paymentUrl = await thirdPartyPayment.createPayment(payment);
+    // 调用QPay创建发票
+    const qpayResult = await qpay.createInvoice(payment);
+    
+    // 更新支付记录，添加QPay发票信息
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        qpayInvoiceId: qpayResult.invoiceId,
+        qpayQrText: qpayResult.qrText,
+        qpayQrImage: qpayResult.qrImage
+      }
+    });
 
-    return reply.code(201).send(payment);
+    return reply.code(201).send({
+      ...payment,
+      qpayInvoiceId: qpayResult.invoiceId,
+      qrText: qpayResult.qrText,
+      qrImage: qpayResult.qrImage,
+      paymentUrls: qpayResult.paymentUrls
+    });
   } catch (error) {
     request.log.error(error);
     return reply.code(500).send({ error: '创建支付记录失败' });
@@ -39,13 +56,24 @@ async function createPayment(request, reply) {
 }
 
 async function handlePaymentCallback(request, reply) {
-  const { paymentId, status, transactionId } = request.body;
+  const { invoice_id, payment_id, payment_status } = request.body;
   try {
+    // 查找对应的支付记录
+    const payment = await this.prisma.payment.findFirst({
+      where: { qpayInvoiceId: invoice_id },
+      include: { order: true }
+    });
+
+    if (!payment) {
+      return reply.code(404).send({ error: '支付记录不存在' });
+    }
+
     // 更新支付记录状态
-    const payment = await this.prisma.payment.update({
-      where: { id: parseInt(paymentId) },
+    const updatedPayment = await this.prisma.payment.update({
+      where: { id: payment.id },
       data: {
-        paymentStatus: status,
+        paymentStatus: payment_status === 'PAID' ? '已支付' : '支付失败',
+        qpayPaymentId: payment_id,
         updatedAt: new Date()
       },
       include: {
@@ -123,8 +151,8 @@ async function refundPayment(request, reply) {
       return reply.code(400).send({ error: '退款金额不能大于支付金额' });
     }
 
-    // TODO: 调用第三方支付接口进行退款
-    // const refundResult = await thirdPartyPayment.refund(payment, refundAmount);
+    // 调用QPay退款接口
+    await qpay.refund(payment.qpayPaymentId, reason);
 
     // 更新支付记录状态
     const updatedPayment = await this.prisma.payment.update({
