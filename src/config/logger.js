@@ -34,35 +34,35 @@ const logger = createLogger({
       handleExceptions: true,
       handleRejections: true
     }),
-    // 错误日志文件
-    new transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-      // 设置文件输出的编码
-      options: { encoding: 'utf8' }
-    }),
-    // 所有日志文件
-    new transports.File({
-      filename: path.join(logDir, 'combined.log'),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-      // 设置文件输出的编码
-      options: { encoding: 'utf8' }
-    })
+    // // 错误日志文件
+    // new transports.File({
+    //   filename: path.join(logDir, 'error.log'),
+    //   level: 'error',
+    //   maxsize: 5242880, // 5MB
+    //   maxFiles: 5,
+    //   // 设置文件输出的编码
+    //   options: { encoding: 'utf8' }
+    // }),
+    // // 所有日志文件
+    // new transports.File({
+    //   filename: path.join(logDir, 'combined.log'),
+    //   maxsize: 5242880, // 5MB
+    //   maxFiles: 5,
+    //   // 设置文件输出的编码
+    //   options: { encoding: 'utf8' }
+    // })
   ]
 });
 
 // 添加未捕获异常的处理
-logger.exceptions.handle(
-  new transports.File({
-    filename: path.join(logDir, 'exceptions.log'),
-    maxsize: 5242880,
-    maxFiles: 5,
-    // 设置文件输出的编码
-    options: { encoding: 'utf8' }
-  })
-);
+// logger.exceptions.handle(
+//   new transports.File({
+//     filename: path.join(logDir, 'exceptions.log'),
+//     maxsize: 5242880,
+//     maxFiles: 5,
+//     // 设置文件输出的编码
+//     options: { encoding: 'utf8' }
+//   })
+// );
 
 module.exports = logger;
