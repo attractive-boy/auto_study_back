@@ -1,22 +1,5 @@
 const fastify = require('fastify')({ 
-  logger: {
-    level: 'debug',
-    timestamp: () => `,"time":"${new Date().toISOString()}"`,
-    formatters: {
-      level: (label) => {
-        return { level: label }
-      }
-    },
-    serializers: {
-      err: (err) => {
-        return {
-          type: err.constructor.name,
-          message: err.message,
-          stack: err.stack
-        }
-      }
-    }
-  }
+  logger: false  // 禁用 Fastify 的默认日志
 });
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('@fastify/jwt');
@@ -39,32 +22,38 @@ fastify.register(cors, {
 
 // 添加请求日志中间件
 fastify.addHook('onRequest', async (request, reply) => {
-  logger.info({ req: request }, 'incoming request');
+  logger.info('收到请求', {
+    method: request.method,
+    url: request.url,
+    headers: request.headers
+  });
 });
 
 fastify.addHook('onResponse', async (request, reply) => {
-  logger.info({
-    res: reply,
+  logger.info('请求完成', {
+    method: request.method,
+    url: request.url,
+    statusCode: reply.statusCode,
     responseTime: reply.getResponseTime()
-  }, 'request completed');
+  });
 });
 
 // 添加错误处理中间件
 fastify.setErrorHandler((error, request, reply) => {
-  logger.error({
-    err: {
+  logger.error('请求处理错误', {
+    error: {
       message: error.message,
       stack: error.stack,
       code: error.code,
       name: error.name
     },
-    req: {
+    request: {
       method: request.method,
       url: request.url,
       headers: request.headers,
       body: request.body
     }
-  }, '请求处理错误');
+  });
   
   reply.code(error.statusCode || 500).send({
     error: error.message || '服务器内部错误'

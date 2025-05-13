@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node src/index.js | pino-pretty",
+    "dev": "nodemon src/index.js",
     "postinstall": "prisma generate",
     "build": "node build.js",
     "db:seed": "node prisma/seed.js"

@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
+const logger = require('../config/logger');
 
 async function adminLogin(request, reply) {
   const { username, password } = request.body;
   
   try {
     // 从数据库查询管理员信息
-    const admin = await this.prisma.admin.findUnique({
+    const admin = await request.server.prisma.admin.findUnique({
       where: { username }
     });
 
@@ -19,7 +20,7 @@ async function adminLogin(request, reply) {
     }
 
     // 使用 fastify.jwt 生成 token
-    const token = this.fastify.jwt.sign(
+    const token = request.server.jwt.sign(
       { 
         id: admin.id,
         username: admin.username,
@@ -35,10 +36,17 @@ async function adminLogin(request, reply) {
       }
     });
   } catch (error) {
-    // 使用更简单的错误日志记录
-    request.log.error({
-      msg: '管理员登录失败',
-      error: error
+    // 使用 winston 记录错误
+    logger.error('管理员登录失败', {
+      error: {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        name: error.name
+      },
+      context: {
+        username
+      }
     });
     
     return reply.code(500).send({ error: '服务器内部错误' });
@@ -51,7 +59,7 @@ async function createAdmin(request, reply) {
   
   try {
     // 检查用户名是否已存在
-    const existingAdmin = await this.prisma.admin.findUnique({
+    const existingAdmin = await request.server.prisma.admin.findUnique({
       where: { username }
     });
 
@@ -64,7 +72,7 @@ async function createAdmin(request, reply) {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // 创建新管理员
-    const admin = await this.prisma.admin.create({
+    const admin = await request.server.prisma.admin.create({
       data: {
         username,
         passwordHash
