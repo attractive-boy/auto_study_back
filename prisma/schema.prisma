@@ -20,9 +20,11 @@ model User {
   id               Int              @id @default(autoincrement()) // 用户ID，主键，自增
   name             String?          // 用户名称，可选
   avatar           String?          // 用户头像URL，可选
-  email            String           @unique // 邮箱地址，唯一
+  email            String?          @unique // 邮箱地址，唯一，可选
+  phone            String?          @unique // 手机号码，唯一，可选
   facebookId       String?          // Facebook账号ID，可选
-  passwordHash     String           // 密码哈希值
+  passwordHash     String?          // 密码哈希值，可选
+  role             String          @default("user") // 用户角色
   createdAt        DateTime         @default(now()) // 创建时间
   updatedAt        DateTime         @updatedAt // 更新时间
 

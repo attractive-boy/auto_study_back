@@ -1,8 +1,42 @@
 const { hash, compare } = require('bcrypt');
+const smsService = require('../services/smsService');
 
 async function authRoutes(fastify, options) {
-
   const { prisma } = fastify;
+
+  // 发送验证码
+  fastify.post('/send-code', {
+    schema: {
+      description: '发送手机验证码',
+      tags: ['认证'],
+      body: {
+        type: 'object',
+        required: ['phone'],
+        properties: {
+          phone: { type: 'string', description: '手机号码' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          description: '发送成功',
+          properties: {
+            success: { type: 'boolean', description: '是否发送成功' }
+          }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { phone } = request.body;
+    
+    const success = await smsService.sendVerificationCode(phone);
+    if (!success) {
+      reply.code(500).send({ error: '验证码发送失败' });
+      return;
+    }
+
+    reply.send({ success: true });
+  });
 
   // 用户登录
   fastify.post('/login', {
@@ -11,10 +45,10 @@ async function authRoutes(fastify, options) {
       tags: ['认证'],
       body: {
         type: 'object',
-        required: ['email', 'password'],
+        required: ['phone', 'code'],
         properties: {
-          email: { type: 'string', format: 'email', description: '用户邮箱' },
-          password: { type: 'string', description: '用户密码' }
+          phone: { type: 'string', description: '手机号码' },
+          code: { type: 'string', description: '验证码' }
         }
       },
       response: {
@@ -28,7 +62,7 @@ async function authRoutes(fastify, options) {
               description: '用户信息',
               properties: {
                 id: { type: 'number', description: '用户ID' },
-                email: { type: 'string', description: '用户邮箱' },
+                phone: { type: 'string', description: '手机号码' },
                 name: { type: 'string', description: '用户名称' },
                 role: { type: 'string', description: '用户角色' }
               }
@@ -45,21 +79,29 @@ async function authRoutes(fastify, options) {
       }
     }
   }, async (request, reply) => {
-    const { email, password } = request.body;
+    const { phone, code } = request.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      reply.code(401).send({ error: '邮箱或密码错误' });
+    // 验证验证码
+    const isValidCode = smsService.verifyCode(phone, code);
+    if (!isValidCode) {
+      reply.code(401).send({ error: '验证码错误或已过期' });
       return;
     }
 
-    const valid = await compare(password, user.passwordHash);
-    if (!valid) {
-      reply.code(401).send({ error: '邮箱或密码错误' });
-      return;
+    // 查找或创建用户
+    let user = await prisma.user.findUnique({
+      where: { phone }
+    });
+
+    if (!user) {
+      // 如果用户不存在，创建新用户
+      user = await prisma.user.create({
+        data: {
+          phone,
+          name: `用户${phone.slice(-4)}`, // 使用手机号后4位作为默认用户名
+          role: 'user'
+        }
+      });
     }
 
     const token = fastify.jwt.sign({ id: user.id });
@@ -68,13 +110,12 @@ async function authRoutes(fastify, options) {
       token,
       user: {
         id: user.id,
-        email: user.email,
+        phone: user.phone,
         name: user.name,
         role: user.role
       }
     });
   });
-
 }
 
 module.exports = authRoutes;
