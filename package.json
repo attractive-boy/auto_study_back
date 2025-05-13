@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node src/index.js",
+    "dev": "node src/index.js | pino-pretty",
     "postinstall": "prisma generate",
     "build": "node build.js",
     "db:seed": "node prisma/seed.js"
@@ -41,7 +41,6 @@
     "mongodb": "^6.15.0",
     "passport-facebook": "^3.0.0",
     "pino": "^9.6.0",
-    "pino-pretty": "^13.0.0",
     "pino-roll": "^3.0.0",
     "pino-socket": "^7.4.0",
     "prisma": "^6.7.0",
@@ -53,6 +52,8 @@
     "bytenode": "^1.5.7",
     "javascript-obfuscator": "^4.1.0",
     "nexe": "^5.0.0-beta.4",
+    "nodemon": "^3.1.10",
+    "pino-pretty": "^13.0.0",
     "v8-compile-cache": "^2.4.0"
   }
 }

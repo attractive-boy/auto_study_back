@@ -35,7 +35,12 @@ async function adminLogin(request, reply) {
       }
     });
   } catch (error) {
-    request.log.error(error);
+    // 使用更简单的错误日志记录
+    request.log.error({
+      msg: '管理员登录失败',
+      error: error
+    });
+    
     return reply.code(500).send({ error: '服务器内部错误' });
   }
 }
