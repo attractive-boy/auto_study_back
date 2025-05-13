@@ -4,6 +4,9 @@ async function routes(fastify, options) {
   // 注册认证相关路由
   fastify.register(require('./auth'));
 
+  // 注册管理员路由
+  fastify.register(require('./admin'));
+
   // 注册订单管理路由
   //fastify.register(require('./orders'));
 
