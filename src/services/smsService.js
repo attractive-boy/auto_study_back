@@ -6,6 +6,17 @@ class SmsService {
     this.token = process.env.SMS_API_TOKEN || '';
     this.from = process.env.SMS_FROM_NUMBER || '';
     this.verificationCodes = new Map(); // 存储验证码
+    this.lastSendTime = new Map(); // 记录最后发送时间
+    this.minInterval = 60 * 1000; // 最小发送间隔（60秒）
+  }
+
+  // 检查是否可以发送验证码
+  canSendVerificationCode(phoneNumber) {
+    const lastTime = this.lastSendTime.get(phoneNumber);
+    if (!lastTime) return true;
+    
+    const now = Date.now();
+    return now - lastTime >= this.minInterval;
   }
 
   // 生成6位数字验证码
@@ -16,6 +27,11 @@ class SmsService {
   // 发送验证码
   async sendVerificationCode(phoneNumber) {
     try {
+      // 检查发送频率
+      if (!this.canSendVerificationCode(phoneNumber)) {
+        throw new Error('发送太频繁，请稍后再试');
+      }
+
       const code = this.generateVerificationCode();
       const response = await axios.post(this.apiUrl, {
         sms_to: phoneNumber,
@@ -33,12 +49,14 @@ class SmsService {
           code,
           expiresAt: Date.now() + 5 * 60 * 1000
         });
+        // 记录发送时间
+        this.lastSendTime.set(phoneNumber, Date.now());
         return true;
       }
       return false;
     } catch (error) {
       console.error('发送验证码失败:', error);
-      return false;
+      throw error;
     }
   }
 
