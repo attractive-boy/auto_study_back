@@ -7,7 +7,7 @@ async function routes(fastify, options) {
   fastify.post('/upload', {
     schema: {
       hide: false,
-      description: '文件上传接口',
+      description: '文件上传接口（请不要使用，卡顿）',
       tags: ['文件管理'],
       summary: '上传文件到 MinIO',
       consumes: ['multipart/form-data'],
@@ -182,6 +182,178 @@ async function routes(fastify, options) {
         return { message: '文件删除成功' };
       } catch (error) {
         reply.code(500).send({ error: error.message });
+      }
+    }
+  });
+
+  // 生成上传URL接口
+  fastify.post('/upload/url', {
+    schema: {
+      hide: false,
+      description: '获取文件上传URL',
+      tags: ['文件管理'],
+      summary: '获取MinIO预签名上传URL',
+      body: {
+        type: 'object',
+        required: ['fileName', 'contentType'],
+        properties: {
+          fileName: {
+            type: 'string',
+            description: '文件名'
+          },
+          contentType: {
+            type: 'string',
+            description: '文件MIME类型'
+          },
+          expirySeconds: {
+            type: 'number',
+            description: 'URL有效期（秒），默认3600秒',
+            default: 3600
+          }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            code: { type: 'number', default: 200 },
+            data: {
+              type: 'object',
+              properties: {
+                fileName: {
+                  type: 'string',
+                  description: '存储后的文件名'
+                },
+                uploadUrl: {
+                  type: 'string',
+                  description: '上传URL'
+                },
+                fileUrl: {
+                  type: 'string',
+                  description: '文件访问URL'
+                }
+              }
+            }
+          }
+        },
+        400: {
+          type: 'object',
+          properties: {
+            code: { type: 'number', default: 400 },
+            error: {
+              type: 'string',
+              description: '错误信息'
+            }
+          }
+        },
+        500: {
+          type: 'object',
+          properties: {
+            code: { type: 'number', default: 500 },
+            error: {
+              type: 'string',
+              description: '错误信息'
+            }
+          }
+        }
+      }
+    },
+    preHandler: [fastify.authenticate],
+    handler: async (request, reply) => {
+      try {
+        const { fileName, contentType, expirySeconds = 3600 } = request.body;
+        
+        // 生成预签名上传URL
+        const result = await minioService.generateUploadUrl(
+          fileName,
+          contentType,
+          expirySeconds
+        );
+
+        return {
+          code: 200,
+          data: result
+        };
+      } catch (error) {
+        logger.error('生成上传URL失败', {
+          error: {
+            message: error.message,
+            stack: error.stack
+          }
+        });
+        reply.code(500).send({
+          code: 500,
+          error: '生成上传URL失败'
+        });
+      }
+    }
+  });
+
+  // 验证文件上传状态
+  fastify.get('/upload/verify/:fileName', {
+    schema: {
+      hide: false,
+      description: '验证文件是否上传成功',
+      tags: ['文件管理'],
+      params: {
+        type: 'object',
+        required: ['fileName'],
+        properties: {
+          fileName: {
+            type: 'string',
+            description: '文件名'
+          }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            code: { type: 'number', default: 200 },
+            data: {
+              type: 'object',
+              properties: {
+                exists: {
+                  type: 'boolean',
+                  description: '文件是否存在'
+                }
+              }
+            }
+          }
+        },
+        500: {
+          type: 'object',
+          properties: {
+            code: { type: 'number', default: 500 },
+            error: {
+              type: 'string',
+              description: '错误信息'
+            }
+          }
+        }
+      }
+    },
+    preHandler: [fastify.authenticate],
+    handler: async (request, reply) => {
+      try {
+        const { fileName } = request.params;
+        const exists = await minioService.verifyFileExists(fileName);
+
+        return {
+          code: 200,
+          data: { exists }
+        };
+      } catch (error) {
+        logger.error('验证文件状态失败', {
+          error: {
+            message: error.message,
+            stack: error.stack
+          }
+        });
+        reply.code(500).send({
+          code: 500,
+          error: '验证文件状态失败'
+        });
       }
     }
   });
