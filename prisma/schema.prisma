@@ -53,16 +53,30 @@ model Membership {
 
 // 店铺模型：管理门店信息
 model Store {
-  id         Int       @id @default(autoincrement()) // 店铺ID，主键，自增
-  name       String    // 店铺名称
-  location   String    // 店铺地址
-  createdAt  DateTime  @default(now()) // 创建时间
-  updatedAt  DateTime  @updatedAt // 更新时间
+  id              Int       @id @default(autoincrement()) // 店铺ID，主键，自增
+  name            String    // 店铺名称
+  location        String    // 店铺地址
+  longitude       Float     // 店铺经度
+  latitude        Float     // 店铺纬度
+  businessStart   String    // 营业开始时间
+  businessEnd     String    // 营业结束时间
+  totalSeats      Int       // 座位总数
+  availableSeats  Int       // 剩余座位数
+  description     String    @db.Text // 场地介绍（富文本）
+  notice          String    @db.Text // 注意事项（富文本）
+  bookingProcess  String    @db.Text // 预约流程（富文本）
+  wifiAccount     String?   // WiFi账号
+  wifiPassword    String?   // WiFi密码
+  phone           String    // 自习室电话
+  createdAt       DateTime  @default(now()) // 创建时间
+  updatedAt       DateTime  @updatedAt // 更新时间
 
   // 关联字段
-  seats      Seat[]    // 店铺的座位
-  services   Service[] // 店铺提供的服务
-  orders     Order[]   // 店铺的订单
+  seats           Seat[]    // 店铺的座位
+  services        Service[] // 店铺提供的服务
+  orders          Order[]   // 店铺的订单
+  announcements   StoreAnnouncement[] // 店铺的通知公告
+  vouchers        Voucher[] // 店铺的卡券
 }
 
 // 座位模型：管理店铺座位信息
@@ -301,4 +315,38 @@ model Statistics {
   totalMembers Int       // 总会员数
   newMembers   Int       // 新增会员数
   createdAt    DateTime  @default(now()) // 创建时间
+}
+
+// 店铺通知公告模型：管理店铺的通知公告
+model StoreAnnouncement {
+  id          Int       @id @default(autoincrement()) // 公告ID，主键，自增
+  storeId     Int       // 关联的店铺ID
+  title       String    // 公告标题
+  content     String    @db.Text // 公告内容
+  isActive    Boolean   @default(true) // 是否激活
+  startDate   DateTime  // 开始时间
+  endDate     DateTime? // 结束时间（可选）
+  createdAt   DateTime  @default(now()) // 创建时间
+  updatedAt   DateTime  @updatedAt // 更新时间
+
+  // 关联关系
+  store       Store     @relation(fields: [storeId], references: [id]) // 关联到店铺表
+}
+
+// 店铺卡券模型：管理店铺的卡券
+model Voucher {
+  id              Int       @id @default(autoincrement()) // 卡券ID，主键，自增
+  storeId         Int       // 关联的店铺ID
+  name            String    // 卡券名称
+  type            String    // 卡券类型（如：时长卡、次数卡等）
+  value           Float     // 卡券面值
+  price           Float     // 卡券售价
+  description     String    @db.Text // 卡券描述
+  validityPeriod  Int       // 有效期（天数）
+  isActive        Boolean   @default(true) // 是否激活
+  createdAt       DateTime  @default(now()) // 创建时间
+  updatedAt       DateTime  @updatedAt // 更新时间
+
+  // 关联关系
+  store           Store     @relation(fields: [storeId], references: [id]) // 关联到店铺表
 }

@@ -64,5 +64,4 @@ const logger = createLogger({
 //     options: { encoding: 'utf8' }
 //   })
 // );
-
 module.exports = logger;

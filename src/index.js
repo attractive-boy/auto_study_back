@@ -1,11 +1,12 @@
 const fastify = require('fastify')({ 
-  logger: false  // 禁用 Fastify 的默认日志
+  logger: true 
 });
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('@fastify/jwt');
 const cors = require('@fastify/cors');
 const swagger = require('@fastify/swagger');
 const swaggerUI = require('@fastify/swagger-ui');
+const multipart = require('@fastify/multipart');
 const logger = require('./config/logger');
 
 // 创建Prisma客户端实例
@@ -18,6 +19,12 @@ fastify.register(cors, {
   methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
+});
+fastify.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 限制文件大小为10MB
+    files: 1 // 限制一次只能上传一个文件
+  }
 });
 
 // 添加请求日志中间件

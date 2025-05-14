@@ -14,13 +14,16 @@ async function routes(fastify, options) {
   //fastify.register(require('./payments'));
 
   // 注册统计分析路由
-  fastify.register(require('./statistics'));
+  // fastify.register(require('./statistics'));
 
   // 注册隐私政策路由
   fastify.register(require('./privacy'));
 
   // 注册店铺管理路由
   fastify.register(require('./stores'));
+
+  // 注册文件管理路由
+  fastify.register(require('./files'));
 
   // 健康检查路由
   fastify.get('/health', {
