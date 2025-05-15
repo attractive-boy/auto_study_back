@@ -190,7 +190,43 @@ async function routes(fastify, options) {
   fastify.post('/upload/url', {
     schema: {
       hide: false,
-      description: '获取文件上传URL（推荐）',
+      description: `获取文件上传URL（推荐）
+      
+使用说明：
+1. 首先调用此接口获取预签名上传URL
+2. 使用返回的uploadUrl直接上传文件到MinIO
+3. 上传完成后使用返回的fileUrl访问文件
+
+示例代码：
+\`\`\`javascript
+// 1. 获取预签名URL
+const response = await fetch('/api/upload/url', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer your-token'
+  },
+  body: JSON.stringify({
+    fileName: 'example.jpg',
+    contentType: 'image/jpeg'
+  })
+});
+
+const { data } = await response.json();
+const { uploadUrl, fileUrl } = data;
+
+// 2. 使用预签名URL上传文件
+const uploadResponse = await fetch(uploadUrl, {
+  method: 'PUT',
+  body: file,
+  headers: {
+    'Content-Type': 'image/jpeg'
+  }
+});
+
+// 3. 上传成功后，使用fileUrl访问文件
+console.log('文件访问地址:', fileUrl);
+\`\`\``,
       tags: ['文件管理'],
       summary: '获取MinIO预签名上传URL',
       body: {
@@ -199,15 +235,15 @@ async function routes(fastify, options) {
         properties: {
           fileName: {
             type: 'string',
-            description: '文件名'
+            description: '文件名（建议使用原始文件名，系统会自动处理重名）'
           },
           contentType: {
             type: 'string',
-            description: '文件MIME类型'
+            description: '文件MIME类型（例如：image/jpeg, application/pdf, text/plain等）'
           },
           expirySeconds: {
             type: 'number',
-            description: 'URL有效期（秒），默认3600秒',
+            description: 'URL有效期（秒），默认3600秒（1小时），建议不要设置太短，确保有足够时间上传文件',
             default: 3600
           }
         }
@@ -216,21 +252,25 @@ async function routes(fastify, options) {
         200: {
           type: 'object',
           properties: {
-            code: { type: 'number', default: 200 },
+            code: { 
+              type: 'number', 
+              default: 200,
+              description: '状态码，200表示成功'
+            },
             data: {
               type: 'object',
               properties: {
                 fileName: {
                   type: 'string',
-                  description: '存储后的文件名'
+                  description: '存储后的文件名（系统可能对文件名进行了处理）'
                 },
                 uploadUrl: {
                   type: 'string',
-                  description: '上传URL'
+                  description: '预签名上传URL，用于直接上传文件到MinIO，有效期由expirySeconds指定'
                 },
                 fileUrl: {
                   type: 'string',
-                  description: '文件访问URL'
+                  description: '文件访问URL，上传成功后可用于访问文件'
                 }
               }
             }
@@ -239,20 +279,28 @@ async function routes(fastify, options) {
         400: {
           type: 'object',
           properties: {
-            code: { type: 'number', default: 400 },
+            code: { 
+              type: 'number', 
+              default: 400,
+              description: '状态码，400表示请求参数错误'
+            },
             error: {
               type: 'string',
-              description: '错误信息'
+              description: '错误信息，例如：缺少必要参数、参数格式错误等'
             }
           }
         },
         500: {
           type: 'object',
           properties: {
-            code: { type: 'number', default: 500 },
+            code: { 
+              type: 'number', 
+              default: 500,
+              description: '状态码，500表示服务器内部错误'
+            },
             error: {
               type: 'string',
-              description: '错误信息'
+              description: '错误信息，例如：生成URL失败、服务器内部错误等'
             }
           }
         }
