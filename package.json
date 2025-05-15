@@ -14,7 +14,14 @@
     "dev": "nodemon src/index.js",
     "postinstall": "prisma generate",
     "build": "node build.js",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "db:pull": "prisma db pull"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

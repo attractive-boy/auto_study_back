@@ -95,6 +95,11 @@ fastify.decorate('prisma', prisma);
 
 // 添加认证中间件装饰器
 fastify.decorate('authenticate', async function(request, reply) {
+  // 在开发环境下跳过认证
+  if (process.env.NODE_ENV === 'development') {
+    return;
+  }
+  
   try {
     await request.jwtVerify();
   } catch (err) {
