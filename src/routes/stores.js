@@ -1,4 +1,4 @@
-const { createStore, updateStore, deleteStore, getStore, getStores } = require('../controllers/stores');
+const { createStore, updateStore, deleteStore, getStore, getStores, getStoreSeats, getStoreServices } = require('../controllers/stores');
 const { storeSchema, updateStoreSchema } = require('../schemas/stores');
 
 async function storeRoutes(fastify, options) {
@@ -7,7 +7,46 @@ async function storeRoutes(fastify, options) {
     schema: {
       description: '创建新店铺',
       tags: ['店铺管理'],
-      body: storeSchema,
+      body: {
+        type: 'object',
+        required: ['name', 'location', 'businessStart', 'businessEnd', 'description', 'notice', 'bookingProcess', 'phone', 'totalSeats'],
+        properties: {
+          name: { type: 'string', description: '店铺名称' },
+          location: { type: 'string', description: '店铺位置' },
+          longitude: { type: 'number', description: '店铺经度', default: 0 },
+          latitude: { type: 'number', description: '店铺纬度', default: 0 },
+          businessStart: { type: 'string', description: '营业开始时间' },
+          businessEnd: { type: 'string', description: '营业结束时间' },
+          totalSeats: { type: 'integer', description: '总座位数' },
+          description: { 
+            type: 'string', 
+            description: '场地介绍（支持富文本格式，可包含图片、表格、列表等HTML内容）' 
+          },
+          notice: { 
+            type: 'string', 
+            description: '注意事项（支持富文本格式，可包含图片、表格、列表等HTML内容）' 
+          },
+          bookingProcess: { 
+            type: 'string', 
+            description: '预约流程（支持富文本格式，可包含图片、表格、列表等HTML内容）' 
+          },
+          phone: { type: 'string', description: '自习室电话' },
+          wifiAccount: { type: 'string', description: 'WiFi账号' },
+          wifiPassword: { type: 'string', description: 'WiFi密码' },
+          images: {
+            type: 'array',
+            description: '店铺轮播图',
+            items: {
+              type: 'object',
+              required: ['imageUrl', 'sortOrder'],
+              properties: {
+                imageUrl: { type: 'string', description: '图片URL' },
+                sortOrder: { type: 'integer', description: '排序顺序' }
+              }
+            }
+          }
+        }
+      },
       response: {
         201: {
           type: 'object',
@@ -16,6 +55,30 @@ async function storeRoutes(fastify, options) {
             id: { type: 'number', description: '店铺ID' },
             name: { type: 'string', description: '店铺名称' },
             location: { type: 'string', description: '店铺位置' },
+            longitude: { type: 'number', description: '店铺经度' },
+            latitude: { type: 'number', description: '店铺纬度' },
+            businessStart: { type: 'string', description: '营业开始时间' },
+            businessEnd: { type: 'string', description: '营业结束时间' },
+            totalSeats: { type: 'integer', description: '座位总数' },
+            availableSeats: { type: 'integer', description: '剩余座位数' },
+            description: { type: 'string', description: '场地介绍' },
+            notice: { type: 'string', description: '注意事项' },
+            bookingProcess: { type: 'string', description: '预约流程' },
+            phone: { type: 'string', description: '自习室电话' },
+            wifiAccount: { type: 'string', description: 'WiFi账号' },
+            wifiPassword: { type: 'string', description: 'WiFi密码' },
+            images: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', description: '图片ID' },
+                  imageUrl: { type: 'string', description: '图片URL' },
+                  sortOrder: { type: 'integer', description: '排序顺序' },
+                  isActive: { type: 'boolean', description: '是否激活' }
+                }
+              }
+            },
             createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
             updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
           }
@@ -29,7 +92,7 @@ async function storeRoutes(fastify, options) {
         }
       }
     },
-    preHandler: [fastify.authenticate],
+    // preHandler: [fastify.authenticate],
     handler: createStore
   });
 
@@ -48,6 +111,26 @@ async function storeRoutes(fastify, options) {
               id: { type: 'number', description: '店铺ID' },
               name: { type: 'string', description: '店铺名称' },
               location: { type: 'string', description: '店铺位置' },
+              businessStart: { type: 'string', description: '营业开始时间' },
+              businessEnd: { type: 'string', description: '营业结束时间' },
+              description: { type: 'string', description: '场地介绍' },
+              notice: { type: 'string', description: '注意事项' },
+              bookingProcess: { type: 'string', description: '预约流程' },
+              phone: { type: 'string', description: '自习室电话' },
+              wifiAccount: { type: 'string', description: 'WiFi账号' },
+              wifiPassword: { type: 'string', description: 'WiFi密码' },
+              images: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number', description: '图片ID' },
+                    imageUrl: { type: 'string', description: '图片URL' },
+                    sortOrder: { type: 'integer', description: '排序顺序' },
+                    isActive: { type: 'boolean', description: '是否激活' }
+                  }
+                }
+              },
               createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
               updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
             }
@@ -201,74 +284,9 @@ async function storeRoutes(fastify, options) {
         }
       }
     },
-    handler: async (request, reply) => {
-      const { storeId } = request.params;
-      try {
-        const seats = await fastify.prisma.seat.findMany({
-          where: { storeId: parseInt(storeId) },
-          orderBy: { seatNumber: 'asc' }
-        });
-        return reply.send(seats);
-      } catch (error) {
-        request.log.error(error);
-        return reply.code(500).send({ error: '获取座位列表失败' });
-      }
-    }
+    handler: getStoreSeats
   });
 
-  // 获取店铺的服务列表
-  fastify.get('/stores/:storeId/services', {
-    schema: {
-      description: '获取店铺的服务列表',
-      tags: ['店铺管理'],
-      params: {
-        type: 'object',
-        required: ['storeId'],
-        properties: {
-          storeId: { type: 'string', description: '店铺ID' }
-        }
-      },
-      response: {
-        200: {
-          type: 'array',
-          description: '服务列表',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', description: '服务ID' },
-              storeId: { type: 'number', description: '店铺ID' },
-              name: { type: 'string', description: '服务名称' },
-              description: { type: 'string', description: '服务描述' },
-              price: { type: 'number', description: '服务价格' },
-              duration: { type: 'number', description: '服务时长(分钟)' },
-              createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
-              updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
-            }
-          }
-        },
-        500: {
-          type: 'object',
-          description: '获取失败',
-          properties: {
-            error: { type: 'string', description: '错误信息' }
-          }
-        }
-      }
-    },
-    handler: async (request, reply) => {
-      const { storeId } = request.params;
-      try {
-        const services = await fastify.prisma.service.findMany({
-          where: { storeId: parseInt(storeId) },
-          orderBy: { name: 'asc' }
-        });
-        return reply.send(services);
-      } catch (error) {
-        request.log.error(error);
-        return reply.code(500).send({ error: '获取服务列表失败' });
-      }
-    }
-  });
 }
 
 module.exports = storeRoutes;

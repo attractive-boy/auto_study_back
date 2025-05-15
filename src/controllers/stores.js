@@ -1,18 +1,50 @@
 const dayjs = require('dayjs');
 
 async function createStore(request, reply) {
-  const { name, location } = request.body;
+  const { images, totalSeats, longitude = 0, latitude = 0, ...storeData } = request.body;
+
   try {
+    request.log.info('开始创建店铺', { storeData });
+    // 创建店铺并同时创建轮播图和座位
     const store = await this.prisma.store.create({
       data: {
-        name,
-        location
+        ...storeData,
+        longitude,
+        latitude,
+        totalSeats,
+        availableSeats: totalSeats, // 初始可用座位数等于总座位数
+        storeImages: images ? {
+          create: images.map(image => ({
+            imageUrl: image.imageUrl,
+            sortOrder: image.sortOrder,
+            isActive: true
+          }))
+        } : undefined,
+        seats: {
+          create: Array.from({ length: totalSeats }, (_, index) => ({
+            seatNumber: `${index + 1}`,
+            status: '可预约'
+          }))
+        }
+      },
+      include: {
+        storeImages: true,
+        seats: true
       }
     });
+
+    request.log.info('店铺创建成功', { storeId: store.id });
     return reply.code(201).send(store);
   } catch (error) {
-    request.log.error(error);
-    return reply.code(500).send({ error: '创建店铺失败' });
+    request.log.error('创建店铺失败', {
+      error: error.message,
+      stack: error.stack,
+      storeData
+    });
+    return reply.code(400).send({ 
+      error: '创建店铺失败',
+      details: error.message
+    });
   }
 }
 
@@ -20,14 +52,16 @@ async function getStores(request, reply) {
   try {
     const stores = await this.prisma.store.findMany({
       include: {
-        seats: true,
-        services: true
-      },
-      orderBy: {
-        name: 'asc'
+        storeImages: true
       }
     });
-    return reply.send(stores);
+    const result = stores.map(store => ({
+      ...store,
+      storeImages: store.storeImages
+        .filter(img => img.isActive === true)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+    }));
+    return reply.send(result);
   } catch (error) {
     request.log.error(error);
     return reply.code(500).send({ error: '获取店铺列表失败' });
@@ -40,15 +74,22 @@ async function getStore(request, reply) {
     const store = await this.prisma.store.findUnique({
       where: { id: parseInt(id) },
       include: {
-        seats: true,
-        services: true
+        storeImages: true
       }
     });
     
     if (!store) {
       return reply.code(404).send({ error: '店铺不存在' });
     }
-    return reply.send(store);
+
+    const result = {
+      ...store,
+      storeImages: store.storeImages
+        .filter(img => img.isActive)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+    };
+
+    return reply.send(result);
   } catch (error) {
     request.log.error(error);
     return reply.code(500).send({ error: '获取店铺信息失败' });
@@ -91,10 +132,40 @@ async function deleteStore(request, reply) {
   }
 }
 
+async function getStoreSeats(request, reply) {
+  const { storeId } = request.params;
+  try {
+    const seats = await this.prisma.seat.findMany({
+      where: { storeId: parseInt(storeId) },
+      orderBy: { seatNumber: 'asc' }
+    });
+    return reply.send(seats);
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: '获取座位列表失败' });
+  }
+}
+
+async function getStoreServices(request, reply) {
+  const { storeId } = request.params;
+  try {
+    const services = await this.prisma.service.findMany({
+      where: { storeId: parseInt(storeId) },
+      orderBy: { name: 'asc' }
+    });
+    return reply.send(services);
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: '获取服务列表失败' });
+  }
+}
+
 module.exports = {
   createStore,
   getStores,
   getStore,
   updateStore,
-  deleteStore
+  deleteStore,
+  getStoreSeats,
+  getStoreServices
 };
