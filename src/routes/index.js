@@ -8,7 +8,7 @@ async function routes(fastify, options) {
   fastify.register(require('./admin'));
 
   // 注册订单管理路由
-  //fastify.register(require('./orders'));
+  fastify.register(require('./orders'));
 
   // 注册支付管理路由
   //fastify.register(require('./payments'));

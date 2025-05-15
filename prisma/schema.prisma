@@ -85,7 +85,9 @@ model Seat {
   id          Int       @id @default(autoincrement()) // 座位ID，主键，自增
   storeId     Int       // 关联的店铺ID
   seatNumber  String    // 座位编号
+  seatType    String?    // 座位类型：如 "普通座位"、"VIP座位"、"包间"等
   status      String    // 座位状态：如 "可预约"、"已占用"，也可改为枚举类型
+  
   createdAt   DateTime  @default(now()) // 创建时间
   updatedAt   DateTime  @updatedAt // 更新时间
 

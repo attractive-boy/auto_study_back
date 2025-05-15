@@ -229,6 +229,75 @@ async function getStoreServices(request, reply) {
   }
 }
 
+async function setStoreSeatTypes(request, reply) {
+  const { storeId } = request.params;
+  const { seatTypes } = request.body;
+  
+  try {
+    // 验证店铺是否存在
+    const store = await this.prisma.store.findUnique({
+      where: { id: parseInt(storeId) },
+      include: {
+        seats: true
+      }
+    });
+
+    if (!store) {
+      return reply.code(404).send({ error: '店铺不存在' });
+    }
+
+    // 验证座位类型配置
+    if (seatTypes.length === 0) {
+      return reply.code(400).send({ error: '座位类型配置不能为空' });
+    }
+
+    // 验证座位编号是否都存在
+    const seatNumbers = store.seats.map(seat => seat.seatNumber);
+    const invalidSeats = seatTypes.filter(
+      config => !seatNumbers.includes(config.seatNumber)
+    );
+    
+    if (invalidSeats.length > 0) {
+      return reply.code(400).send({ 
+        error: '存在无效的座位编号',
+        invalidSeats: invalidSeats.map(seat => seat.seatNumber)
+      });
+    }
+
+    // 创建座位编号到ID的映射
+    const seatMap = store.seats.reduce((acc, seat) => {
+      acc[seat.seatNumber] = seat.id;
+      return acc;
+    }, {});
+
+    // 批量更新座位类型
+    await this.prisma.$transaction(
+      seatTypes.map(config => 
+        this.prisma.seat.update({
+          where: { 
+            id: seatMap[config.seatNumber]
+          },
+          data: { seatType: config.type }
+        })
+      )
+    );
+
+    // 获取更新后的座位列表
+    const updatedSeats = await this.prisma.seat.findMany({
+      where: { storeId: parseInt(storeId) },
+      orderBy: { seatNumber: 'asc' }
+    });
+
+    return reply.code(200).send({
+      message: '座位类型设置成功',
+      seats: updatedSeats
+    });
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: '设置座位类型失败' });
+  }
+}
+
 module.exports = {
   createStore,
   getStores,
@@ -236,5 +305,6 @@ module.exports = {
   updateStore,
   deleteStore,
   getStoreSeats,
-  getStoreServices
+  getStoreServices,
+  setStoreSeatTypes
 };

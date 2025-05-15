@@ -1,4 +1,4 @@
-const { createStore, updateStore, deleteStore, getStore, getStores, getStoreSeats, getStoreServices } = require('../controllers/stores');
+const { createStore, updateStore, deleteStore, getStore, getStores, getStoreSeats, getStoreServices, setStoreSeatTypes } = require('../controllers/stores');
 
 async function storeRoutes(fastify, options) {
   // 创建店铺
@@ -391,6 +391,77 @@ async function storeRoutes(fastify, options) {
       }
     },
     handler: getStoreSeats
+  });
+
+  //设置座位类型
+  fastify.post('/stores/:storeId/seats/types', {
+    schema: {
+      description: '设置店铺座位类型',
+      tags: ['店铺管理'],
+      params: {
+        type: 'object',
+        required: ['storeId'],
+        properties: {
+          storeId: { type: 'string', description: '店铺ID' }
+        }
+      },
+      body: {
+        type: 'object',
+        required: ['seatTypes'],
+        properties: {
+          seatTypes: {
+            type: 'array',
+            description: '座位类型配置列表',
+            items: {
+              type: 'object',
+              required: ['seatNumber', 'type'],
+              properties: {
+                seatNumber: { 
+                  type: 'string', 
+                  description: '座位编号'
+                },
+                type: { 
+                  type: 'string', 
+                  description: '座位类型，如：普通座位、VIP座位、包间等'
+                }
+              }
+            }
+          }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          description: '设置成功',
+          properties: {
+            message: { type: 'string', description: '成功信息' },
+            seatTypes: {
+              type: 'array',
+              items: {
+                type: 'string',
+                description: '座位类型名称'
+              }
+            }
+          }
+        },
+        400: {
+          type: 'object',
+          description: '请求参数错误',
+          properties: {
+            error: { type: 'string', description: '错误信息' }
+          }
+        },
+        404: {
+          type: 'object',
+          description: '店铺不存在',
+          properties: {
+            error: { type: 'string', description: '错误信息' }
+          }
+        }
+      }
+    },
+    preHandler: [fastify.authenticate],
+    handler: setStoreSeatTypes
   });
 
 }
