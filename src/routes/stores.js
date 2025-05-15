@@ -37,9 +37,9 @@ async function storeRoutes(fastify, options) {
             description: '店铺轮播图',
             items: {
               type: 'object',
-              required: ['imageUrl', 'sortOrder'],
+              required: ['imageName', 'sortOrder'],
               properties: {
-                imageUrl: { type: 'string', description: '图片URL' },
+                imageName: { type: 'string', description: '图片名称' },
                 sortOrder: { type: 'integer', description: '排序顺序' }
               }
             }
@@ -72,7 +72,7 @@ async function storeRoutes(fastify, options) {
                 type: 'object',
                 properties: {
                   id: { type: 'number', description: '图片ID' },
-                  imageUrl: { type: 'string', description: '图片URL' },
+                  imageName: { type: 'string', description: '图片名称' },
                   sortOrder: { type: 'integer', description: '排序顺序' },
                   isActive: { type: 'boolean', description: '是否激活' }
                 }
@@ -124,7 +124,7 @@ async function storeRoutes(fastify, options) {
                   type: 'object',
                   properties: {
                     id: { type: 'number', description: '图片ID' },
-                    imageUrl: { type: 'string', description: '图片URL' },
+                    imageName: { type: 'string', description: '图片名称' },
                     sortOrder: { type: 'integer', description: '排序顺序' },
                     isActive: { type: 'boolean', description: '是否激活' }
                   }
@@ -179,7 +179,7 @@ async function storeRoutes(fastify, options) {
                 type: 'object',
                 properties: {
                   id: { type: 'number', description: '图片ID' },
-                  imageUrl: { type: 'string', description: '图片URL' },
+                  imageName: { type: 'string', description: '图片名称' },
                   sortOrder: { type: 'integer', description: '排序顺序' },
                   isActive: { type: 'boolean', description: '是否激活' }
                 }
@@ -255,9 +255,9 @@ async function storeRoutes(fastify, options) {
             description: '店铺轮播图',
             items: {
               type: 'object',
-              required: ['imageUrl', 'sortOrder'],
+              required: ['imageName', 'sortOrder'],
               properties: {
-                imageUrl: { type: 'string', description: '图片URL' },
+                imageName: { type: 'string', description: '图片名称' },
                 sortOrder: { type: 'integer', description: '排序顺序' }
               }
             }
@@ -290,7 +290,7 @@ async function storeRoutes(fastify, options) {
                 type: 'object',
                 properties: {
                   id: { type: 'number', description: '图片ID' },
-                  imageUrl: { type: 'string', description: '图片URL' },
+                  imageName: { type: 'string', description: '图片名称' },
                   sortOrder: { type: 'integer', description: '排序顺序' },
                   isActive: { type: 'boolean', description: '是否激活' }
                 }

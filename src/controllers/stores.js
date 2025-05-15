@@ -15,7 +15,7 @@ async function createStore(request, reply) {
         availableSeats: totalSeats, // 初始可用座位数等于总座位数
         storeImages: images ? {
           create: images.map(image => ({
-            imageUrl: image.imageUrl,
+            imageName: image.imageName,
             sortOrder: image.sortOrder,
             isActive: true
           }))

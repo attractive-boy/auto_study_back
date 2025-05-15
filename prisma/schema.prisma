@@ -356,7 +356,7 @@ model Voucher {
 model StoreImage {
   id          Int       @id @default(autoincrement()) // 图片ID，主键，自增
   storeId     Int       // 关联的店铺ID
-  imageUrl    String    // 图片URL
+  imageName    String    // 图片URL
   sortOrder   Int       @default(0) // 排序顺序
   isActive    Boolean   @default(true) // 是否激活
   createdAt   DateTime  @default(now()) // 创建时间
