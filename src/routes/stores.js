@@ -376,6 +376,7 @@ async function storeRoutes(fastify, options) {
               storeId: { type: 'number', description: '店铺ID' },
               seatNumber: { type: 'string', description: '座位号' },
               status: { type: 'string', description: '座位状态' },
+              type: { type: 'string', description: '座位类型，如：普通座位、VIP座位、包间等' },
               createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
               updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
             }

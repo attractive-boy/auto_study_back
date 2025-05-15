@@ -271,7 +271,11 @@ console.log('文件访问地址:', fileUrl);
                 fileUrl: {
                   type: 'string',
                   description: '文件访问URL，上传成功后可用于访问文件'
-                }
+                },
+                richTextUrl: {
+                  type: 'string',
+                  description: '富文本编辑器使用的URL，有效期永久'
+                },
               }
             }
           }
@@ -318,9 +322,16 @@ console.log('文件访问地址:', fileUrl);
           expirySeconds
         );
 
+        // 生成富文本编辑器使用的URL（永久有效）
+        const baseUrl = process.env.BASE_URL || 'https://autostudy.djjp.cn';
+        const richTextUrl = `${baseUrl.replace(/\/$/, '')}/view/${result.fileName}`;
+
         return {
           code: 200,
-          data: result
+          data: {
+            ...result,
+            richTextUrl
+          }
         };
       } catch (error) {
         logger.error('生成上传URL失败', {
@@ -401,6 +412,59 @@ console.log('文件访问地址:', fileUrl);
         reply.code(500).send({
           code: 500,
           error: '验证文件状态失败'
+        });
+      }
+    }
+  });
+
+
+  // 文件访问重定向
+  fastify.get('/view/:fileName', {
+    schema: {
+      description: '文件访问重定向',
+      tags: ['文件管理'],
+      summary: '重定向到MinIO文件访问地址（用于富文本编辑器等场景）',
+      params: {
+        type: 'object',
+        required: ['fileName'],
+        properties: {
+          fileName: {
+            type: 'string',
+            description: '文件名'
+          }
+        }
+      }
+    },
+    handler: async (request, reply) => {
+      try {
+        const { fileName } = request.params;
+        
+        // 验证文件是否存在
+        const exists = await minioService.verifyFileExists(fileName);
+        if (!exists) {
+          return reply.code(404).send({
+            code: 404,
+            error: '文件不存在'
+          });
+        }
+
+        // 生成一个较长时间的预签名URL（7天）
+        const url = await minioService.getFileUrl(fileName, 7 * 24 * 60 * 60);
+        
+        // 使用307临时重定向到MinIO URL
+        logger.info('文件访问重定向', { url });
+        reply.header('Location', url);
+        return reply.code(307).send();
+      } catch (error) {
+        logger.error('文件访问重定向失败', {
+          error: {
+            message: error.message,
+            stack: error.stack
+          }
+        });
+        reply.code(500).send({
+          code: 500,
+          error: '文件访问重定向失败'
         });
       }
     }

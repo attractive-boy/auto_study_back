@@ -13,8 +13,6 @@ async function routes(fastify, options) {
   // 注册支付管理路由
   //fastify.register(require('./payments'));
 
-  // 注册统计分析路由
-  // fastify.register(require('./statistics'));
 
   // 注册隐私政策路由
   fastify.register(require('./privacy'));

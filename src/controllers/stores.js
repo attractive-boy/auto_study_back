@@ -206,6 +206,15 @@ async function getStoreSeats(request, reply) {
   try {
     const seats = await this.prisma.seat.findMany({
       where: { storeId: parseInt(storeId) },
+      select: {
+        id: true,
+        storeId: true,
+        seatNumber: true,
+        status: true,
+        seatType: true,
+        createdAt: true,
+        updatedAt: true
+      },
       orderBy: { seatNumber: 'asc' }
     });
     return reply.send(seats);
