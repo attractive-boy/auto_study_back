@@ -74,7 +74,14 @@ async function getStore(request, reply) {
     const store = await this.prisma.store.findUnique({
       where: { id: parseInt(id) },
       include: {
-        storeImages: true
+        storeImages: true,
+        seats: {
+          select: {
+            id: true,
+            seatNumber: true,
+            status: true
+          }
+        }
       }
     });
     
@@ -86,7 +93,9 @@ async function getStore(request, reply) {
       ...store,
       storeImages: store.storeImages
         .filter(img => img.isActive)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+      seats: store.seats,
+      services: store.services
     };
 
     return reply.send(result);
@@ -101,9 +110,69 @@ async function updateStore(request, reply) {
   const updateData = request.body;
   
   try {
+    // 如果更新数据中包含totalSeats，需要同步调整座位表
+    if (updateData.totalSeats !== undefined) {
+      // 获取当前店铺信息
+      const currentStore = await this.prisma.store.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          seats: true
+        }
+      });
+
+      if (!currentStore) {
+        return reply.code(404).send({ error: '店铺不存在' });
+      }
+
+      const currentSeatCount = currentStore.seats.length;
+      const newSeatCount = updateData.totalSeats;
+
+      // 如果新座位数大于当前座位数，需要添加新座位
+      if (newSeatCount > currentSeatCount) {
+        const seatsToAdd = [];
+        for (let i = currentSeatCount + 1; i <= newSeatCount; i++) {
+          seatsToAdd.push({
+            storeId: parseInt(id),
+            seatNumber: `${i}`,
+            status: '可预约'
+          });
+        }
+        await this.prisma.seat.createMany({
+          data: seatsToAdd
+        });
+      }
+      // 如果新座位数小于当前座位数，需要删除多余的座位
+      else if (newSeatCount < currentSeatCount) {
+        await this.prisma.seat.deleteMany({
+          where: {
+            storeId: parseInt(id),
+            seatNumber: {
+              in: currentStore.seats
+                .slice(newSeatCount)
+                .map(seat => seat.seatNumber)
+            }
+          }
+        });
+      }
+
+      // 更新可用座位数
+      updateData.availableSeats = newSeatCount;
+    }
+
+    // 更新店铺信息
     const store = await this.prisma.store.update({
       where: { id: parseInt(id) },
-      data: updateData
+      data: updateData,
+      include: {
+        storeImages: true,
+        seats: {
+          select: {
+            id: true,
+            seatNumber: true,
+            status: true
+          }
+        }
+      }
     });
     
     return reply.send(store);

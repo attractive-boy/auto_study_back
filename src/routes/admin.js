@@ -1,5 +1,4 @@
 const { adminLogin, createAdmin } = require('../controllers/admin');
-const { adminLoginSchema } = require('../schemas/admin');
 
 async function adminRoutes(fastify, options) {
   // 管理员登录
@@ -7,7 +6,24 @@ async function adminRoutes(fastify, options) {
     schema: {
       description: '管理员登录',
       tags: ['管理员'],
-      body: adminLoginSchema,
+      body: {
+        type: 'object',
+        required: ['username', 'password'],
+        properties: {
+          username: { 
+            type: 'string',
+            minLength: 3,
+            maxLength: 50,
+            description: '管理员用户名'
+          },
+          password: { 
+            type: 'string',
+            minLength: 6,
+            maxLength: 100,
+            description: '管理员密码'
+          }
+        }
+      },
       response: {
         200: {
           type: 'object',
@@ -40,7 +56,24 @@ async function adminRoutes(fastify, options) {
     schema: {
       description: '创建新管理员',
       tags: ['管理员'],
-      body: adminLoginSchema,
+      body: {
+        type: 'object',
+        required: ['username', 'password'],
+        properties: {
+          username: { 
+            type: 'string',
+            minLength: 3,
+            maxLength: 50,
+            description: '管理员用户名'
+          },
+          password: { 
+            type: 'string',
+            minLength: 6,
+            maxLength: 100,
+            description: '管理员密码'
+          }
+        }
+      },
       response: {
         201: {
           type: 'object',

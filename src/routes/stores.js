@@ -1,5 +1,4 @@
 const { createStore, updateStore, deleteStore, getStore, getStores, getStoreSeats, getStoreServices } = require('../controllers/stores');
-const { storeSchema, updateStoreSchema } = require('../schemas/stores');
 
 async function storeRoutes(fastify, options) {
   // 创建店铺
@@ -92,7 +91,7 @@ async function storeRoutes(fastify, options) {
         }
       }
     },
-    // preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate],
     handler: createStore
   });
 
@@ -119,7 +118,7 @@ async function storeRoutes(fastify, options) {
               phone: { type: 'string', description: '自习室电话' },
               wifiAccount: { type: 'string', description: 'WiFi账号' },
               wifiPassword: { type: 'string', description: 'WiFi密码' },
-              images: {
+              storeImages: {
                 type: 'array',
                 items: {
                   type: 'object',
@@ -161,6 +160,43 @@ async function storeRoutes(fastify, options) {
             id: { type: 'number', description: '店铺ID' },
             name: { type: 'string', description: '店铺名称' },
             location: { type: 'string', description: '店铺位置' },
+            longitude: { type: 'number', description: '店铺经度' },
+            latitude: { type: 'number', description: '店铺纬度' },
+            businessStart: { type: 'string', description: '营业开始时间' },
+            businessEnd: { type: 'string', description: '营业结束时间' },
+            totalSeats: { type: 'integer', description: '座位总数' },
+            availableSeats: { type: 'integer', description: '剩余座位数' },
+            description: { type: 'string', description: '场地介绍（富文本）' },
+            notice: { type: 'string', description: '注意事项（富文本）' },
+            bookingProcess: { type: 'string', description: '预约流程（富文本）' },
+            wifiAccount: { type: 'string', description: 'WiFi账号' },
+            wifiPassword: { type: 'string', description: 'WiFi密码' },
+            phone: { type: 'string', description: '自习室电话' },
+            storeImages: {
+              type: 'array',
+              description: '店铺轮播图',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', description: '图片ID' },
+                  imageUrl: { type: 'string', description: '图片URL' },
+                  sortOrder: { type: 'integer', description: '排序顺序' },
+                  isActive: { type: 'boolean', description: '是否激活' }
+                }
+              }
+            },
+            seats: {
+              type: 'array',
+              description: '店铺座位列表',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', description: '座位ID' },
+                  seatNumber: { type: 'string', description: '座位号' },
+                  status: { type: 'string', description: '座位状态' }
+                }
+              }
+            },
             createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
             updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
           }
@@ -189,7 +225,45 @@ async function storeRoutes(fastify, options) {
           id: { type: 'string', description: '店铺ID' }
         }
       },
-      body: updateStoreSchema,
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: '店铺名称' },
+          location: { type: 'string', description: '店铺位置' },
+          longitude: { type: 'number', description: '店铺经度' },
+          latitude: { type: 'number', description: '店铺纬度' },
+          businessStart: { type: 'string', description: '营业开始时间' },
+          businessEnd: { type: 'string', description: '营业结束时间' },
+          totalSeats: { type: 'integer', description: '总座位数' },
+          description: { 
+            type: 'string', 
+            description: '场地介绍（支持富文本格式，可包含图片、表格、列表等HTML内容）' 
+          },
+          notice: { 
+            type: 'string', 
+            description: '注意事项（支持富文本格式，可包含图片、表格、列表等HTML内容）' 
+          },
+          bookingProcess: { 
+            type: 'string', 
+            description: '预约流程（支持富文本格式，可包含图片、表格、列表等HTML内容）' 
+          },
+          phone: { type: 'string', description: '自习室电话' },
+          wifiAccount: { type: 'string', description: 'WiFi账号' },
+          wifiPassword: { type: 'string', description: 'WiFi密码' },
+          images: {
+            type: 'array',
+            description: '店铺轮播图',
+            items: {
+              type: 'object',
+              required: ['imageUrl', 'sortOrder'],
+              properties: {
+                imageUrl: { type: 'string', description: '图片URL' },
+                sortOrder: { type: 'integer', description: '排序顺序' }
+              }
+            }
+          }
+        }
+      },
       response: {
         200: {
           type: 'object',
@@ -198,7 +272,39 @@ async function storeRoutes(fastify, options) {
             id: { type: 'number', description: '店铺ID' },
             name: { type: 'string', description: '店铺名称' },
             location: { type: 'string', description: '店铺位置' },
+            longitude: { type: 'number', description: '店铺经度' },
+            latitude: { type: 'number', description: '店铺纬度' },
+            businessStart: { type: 'string', description: '营业开始时间' },
+            businessEnd: { type: 'string', description: '营业结束时间' },
+            totalSeats: { type: 'integer', description: '座位总数' },
+            availableSeats: { type: 'integer', description: '剩余座位数' },
+            description: { type: 'string', description: '场地介绍' },
+            notice: { type: 'string', description: '注意事项' },
+            bookingProcess: { type: 'string', description: '预约流程' },
+            phone: { type: 'string', description: '自习室电话' },
+            wifiAccount: { type: 'string', description: 'WiFi账号' },
+            wifiPassword: { type: 'string', description: 'WiFi密码' },
+            images: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', description: '图片ID' },
+                  imageUrl: { type: 'string', description: '图片URL' },
+                  sortOrder: { type: 'integer', description: '排序顺序' },
+                  isActive: { type: 'boolean', description: '是否激活' }
+                }
+              }
+            },
+            createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
             updatedAt: { type: 'string', format: 'date-time', description: '更新时间' }
+          }
+        },
+        400: {
+          type: 'object',
+          description: '更新失败',
+          properties: {
+            error: { type: 'string', description: '错误信息' }
           }
         },
         404: {
