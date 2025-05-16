@@ -188,15 +188,53 @@ async function updateStore(request, reply) {
 async function deleteStore(request, reply) {
   const { id } = request.params;
   try {
-    await this.prisma.store.delete({
-      where: { id: parseInt(id) }
+    // 使用事务确保数据一致性
+    await this.prisma.$transaction(async (prisma) => {
+      // 1. 删除所有相关的订单记录
+      await prisma.order.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+
+      // 2. 删除所有相关的座位记录
+      await prisma.seat.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+
+      // 3. 删除所有相关的服务记录
+      await prisma.service.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+
+      // 4. 删除所有相关的公告记录
+      await prisma.storeAnnouncement.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+
+      // 5. 删除所有相关的卡券记录
+      await prisma.voucher.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+
+      // 6. 删除所有相关的图片记录
+      await prisma.storeImage.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+
+      // 7. 最后删除商店记录
+      await prisma.store.delete({
+        where: { id: parseInt(id) }
+      });
     });
-    return reply.code(204).send();
+
+    return reply.code(200).send({ message: '店铺及相关数据删除成功' });
   } catch (error) {
     if (error.code === 'P2025') {
       return reply.code(404).send({ error: '店铺不存在' });
     }
-    request.log.error(error);
+    request.log.error('删除店铺失败', {
+      error: error.message,
+      stack: error.stack
+    });
     return reply.code(500).send({ error: '删除店铺失败' });
   }
 }
