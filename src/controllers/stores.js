@@ -158,11 +158,22 @@ async function updateStore(request, reply) {
       // 更新可用座位数
       updateData.availableSeats = newSeatCount;
     }
+    updateData.storeImages = updateData.images ? {
+      create: updateData.images.map(image => ({
+        imageName: image.imageName,
+        sortOrder: image.sortOrder,
+        isActive: true
+      }))
+    } : undefined
 
+    updateData.images = undefined
+    
     // 更新店铺信息
     const store = await this.prisma.store.update({
       where: { id: parseInt(id) },
-      data: updateData,
+      data: {
+        ...updateData
+      },
       include: {
         storeImages: true,
         seats: {
