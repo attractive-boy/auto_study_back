@@ -158,6 +158,14 @@ async function updateStore(request, reply) {
       // 更新可用座位数
       updateData.availableSeats = newSeatCount;
     }
+
+    // 如果提供了新的图片，先删除现有的轮播图
+    if (updateData.images) {
+      await this.prisma.storeImage.deleteMany({
+        where: { storeId: parseInt(id) }
+      });
+    }
+
     updateData.storeImages = updateData.images ? {
       create: updateData.images.map(image => ({
         imageName: image.imageName,
